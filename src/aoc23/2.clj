@@ -88,3 +88,56 @@
         :greens 13
         :blues 14})
 ;; returns => 2377
+
+(defn solve2
+  "Power of cubes"
+  [input]
+  (let [lines (seq (str/split-lines input))
+        get-color (fn [s]
+                    (cond
+                      (str/includes? s "red") :red
+                      (str/includes? s "green") :green
+                      (str/includes? s "blue") :blue))
+        cube-set-by-color (fn [cubes-shown color-key]
+                            (map (fn [set]
+                                   (let [num-color-sets (or (str/split set #",") set)]
+                                     (map (fn [num-color]
+                                            (let [num (-> num-color
+                                                          str/trim
+                                                          (str/split #" ")
+                                                          first
+                                                          Integer/parseInt)
+                                                  color (get-color num-color)]
+                                              (if (= color color-key)
+                                                num
+                                                0)))
+                                          num-color-sets)))
+                                 cubes-shown))
+        games (map (fn [line]
+                     (let [cubes-shown (-> line
+                                           (str/split #":")
+                                           rest
+                                           first
+                                           (str/split #";"))
+                           red-cube-sets (cube-set-by-color cubes-shown :red)
+                           green-cube-sets (cube-set-by-color cubes-shown :green)
+                           blue-cube-sets (cube-set-by-color cubes-shown :blue)
+                           min-red (apply max (flatten red-cube-sets))
+                           min-green (apply max (flatten green-cube-sets))
+                           min-blue (apply max (flatten blue-cube-sets))]
+                       ;; {:red min-red :green min-green :blue min-blue}
+                       (* min-red min-green min-blue)))
+                   lines)]
+    (reduce + games)))
+
+;; expect 4 red, 2 green, 6 blue 
+;; expect 1 red, 3 green, 4 blue cubes.
+;; expect 20 red, 13 green, 6 blue
+;; expect 14 red, 3 green, 15 blue
+;; expect 6 red, 3 green, 2 blue
+;; expect (48, 12, 1560, 630, 36)
+;; expect => 2286
+(solve2 test-input)
+
+(solve2 input)
+;; returns => 71220
