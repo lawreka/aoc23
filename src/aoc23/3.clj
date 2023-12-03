@@ -137,3 +137,66 @@
 
 (solve input)
 ;; returns 546563
+
+(defn get-gear-indexes [line]
+  (->> (map-indexed (fn [index char]
+                      (when (re-matches #"\*" (str char))
+                        index))
+                    line)
+       (remove nil?)
+       seq))
+
+(get-gear-indexes "467..114..")
+(get-gear-indexes "...*......")
+(get-gear-indexes "617*......")
+
+(defn gear-ratio
+  [star-index prev-line curr-line next-line]
+  (let [star-range [(dec star-index) star-index (inc star-index)]
+        line-num-positions (fn [line]
+                             (when (not-empty (line->numbers line))
+                               (numbers->positions (line->numbers line) line)))
+        nums-in-star-range (fn [nums]
+                             (map (fn [{:keys [num start end]}]
+                                    (let [start-in-range? (int-in-range? star-range start)
+                                          end-in-range? (int-in-range? star-range end)]
+                                      (when (or start-in-range? end-in-range?)
+                                        num)))
+                                  nums))
+        prev-line-nums (line-num-positions prev-line)
+        prev-line-nums-in-range (nums-in-star-range prev-line-nums)
+        curr-line-nums (line-num-positions curr-line)
+        curr-line-nums-in-range (nums-in-star-range curr-line-nums)
+        next-line-nums (line-num-positions next-line)
+        next-line-nums-in-range (nums-in-star-range next-line-nums)
+        all-nums-in-range (->> (concat prev-line-nums-in-range curr-line-nums-in-range next-line-nums-in-range)
+                               (remove nil?))]
+    (if (= 2 (count all-nums-in-range))
+      (* (Integer/parseInt (first all-nums-in-range)) (Integer/parseInt (last all-nums-in-range)))
+      0)))
+
+(defn solve2
+  "Gear ratios
+   Only * with exactly two adjacent numbers count
+   Multiplying those two numbers, reduce all"
+  [input]
+  (let [lines (seq (str/split-lines input))
+        gears (->> (map-indexed (fn [index line]
+                             (let [curr-line line
+                                   next-line (nth lines (inc index) "...")
+                                   prev-line (nth lines (dec index) "...")
+                                   star-indexes (get-gear-indexes curr-line)
+                                   gear-ratios (map (fn [star-index]
+                                                      (gear-ratio star-index prev-line curr-line next-line))
+                                                    star-indexes)]
+                               gear-ratios))
+                           lines)
+                  (remove empty?))]
+    (reduce + (flatten gears))))
+
+;; expect (+ (* 467 35) (* 755 598))
+;; expect => 467835
+(solve2 test-input)
+
+(solve2 input)
+;; returns 91031374
