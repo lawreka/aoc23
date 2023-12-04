@@ -52,6 +52,8 @@
 (def test-line "Card 1: 41 48 83 86 17 | 83 86  6 31 17  9 48 53")
 (string->set first test-line)
 (string->set last test-line)
+(def test-line2 "Card 1111: 41 48 83 86 17 | 83 86  6 31 17  9 48 53")
+
 
 (defn power-of-2 [x]
   (int (math/pow 2 x)))
@@ -82,3 +84,51 @@
 
 (solve input)
 ;; returns => 24733
+
+(defn card->number [line]
+  (-> line
+      (str/split #":")
+      first
+      (str/split #" ")
+      last
+      Integer/parseInt))
+
+(card->number test-line)
+(card->number test-line2)
+
+(defn get-card-dupe-range
+  [card-number line]
+  (let [winning-numbers (string->set first line)
+        scratcher-numbers (string->set last line)
+        matches (clj.set/intersection winning-numbers scratcher-numbers)
+        dupe-range (range (inc card-number) (+ (inc card-number) (count matches)))]
+    dupe-range))
+
+(defn add-lines
+  ([lines]
+   (let [original-cards lines
+         cards-as-numbers (map #(card->number %) lines)]
+     (add-lines cards-as-numbers original-cards 0)))
+  ([rest-lines original-cards card-count]
+   (let [current-card-number (first rest-lines)
+         rest-cards (rest rest-lines)
+         current-card-index-in-originals (dec current-card-number)
+         current-card (nth original-cards current-card-index-in-originals)
+         dupes (get-card-dupe-range current-card-number current-card)
+         rest-plus-dupes (into rest-cards dupes)]
+     (if (and true #_(> 1000 card-count) (not-empty rest-plus-dupes))
+       (recur rest-plus-dupes original-cards (inc card-count))
+       (inc card-count)))))
+
+(defn solve2
+  "Amount of matches wins you more cards"
+  [input]
+  (let [lines (seq (str/split-lines input))]
+    (add-lines lines)))
+
+(solve2 test-input)
+;; you end up with 1 instance of card 1, 2 instances of card 2, 4 instances of card 3, 8 instances of card 4, 14 instances of card 5, and 1 instance of card 6. In total, this example pile of scratchcards causes you to ultimately have 30
+;; expect => 30
+
+(solve2 input)
+;; returns => 5422730
