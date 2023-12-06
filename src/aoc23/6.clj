@@ -1,7 +1,6 @@
 (ns aoc23.6
   (:require [aoc23.input.6 :refer [test-input
                                    input]]
-            [clojure.math :as math]
             [clojure.string :as str]))
 
 ;; --- Day 6: Wait For It ---
@@ -120,3 +119,34 @@
 
 (solve input)
 ;; returns => 220320
+
+(defn solve2
+  [input]
+  (let [time (->> (-> (str/split-lines input)
+                      first
+                      (str/split #":")
+                      second
+                      str/trim
+                      (str/split #" "))
+                  (remove str/blank?)
+                  (str/join)
+                  Long/parseLong)
+        distance (->> (-> (str/split-lines input)
+                          second
+                          (str/split #":")
+                          second
+                          str/trim
+                          (str/split #" "))
+                      (remove str/blank?)
+                      (str/join)
+                      Long/parseLong)
+        win-start-range (win-start time 1 distance)
+        win-end-range (win-end time (dec time) distance)]
+    (inc (- win-end-range win-start-range))))
+
+(solve2 test-input)
+;; anywhere from 14 to 71516 milliseconds and beat the record, a total of 71503 ways!
+;; expect => 71503
+
+(solve2 input)
+;; returns => 34454850
