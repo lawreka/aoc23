@@ -1,6 +1,7 @@
 (ns aoc23.5
   (:require [aoc23.input.5 :refer [test-input
                                    input]]
+            [clojure.math :as math]
             [clojure.string :as str]))
 
 (defn map->range [input index]
@@ -202,4 +203,58 @@
 (brute-force test-input)
 ;; expect => 46
 
-#_(solve2 input)
+
+;; (defn process-seed-range2
+;;   ([map-of-ranges]
+;;    (let [seed-ranges (:seeds map-of-ranges)]
+;;      (process-seed-range2 map-of-ranges seed-ranges [] 0)))
+;;   ([map-of-ranges rest-seed-ranges results break]
+;;    (let [current-seed-range (first rest-seed-ranges)
+;;          new-rest-seed-ranges (rest rest-seed-ranges)
+;;          _ (println :current current-seed-range)
+;;          _ (println :rest (count new-rest-seed-ranges))
+;;          start (:start current-seed-range)
+;;          end (:end current-seed-range)
+;;          middle (-> (- end start)
+;;                     (* 0.5)
+;;                     math/round
+;;                     (+ start))
+;;          first-seed-location (get-location-number start map-of-ranges)
+;;          last-seed-location (get-location-number end map-of-ranges)
+;;          middle-seed-location (get-location-number middle map-of-ranges)]
+;;      (if (and (< break 300)
+;;               (not-empty new-rest-seed-ranges))
+;;        (let [add-first-range (< middle-seed-location first-seed-location)
+;;              add-last-range (< last-seed-location middle-seed-location)
+;;              new-min (apply min first-seed-location last-seed-location middle-seed-location results)
+;;              done? (= start (dec end))
+;;              new-new-rest-seed-ranges (if done?
+;;                                         new-rest-seed-ranges
+;;                                         (if (and add-first-range add-last-range)
+;;                                           (into new-rest-seed-ranges [{:start start :end middle} {:start middle :end end}])
+;;                                           (if add-first-range
+;;                                             (into new-rest-seed-ranges [{:start start :end middle}])
+;;                                             (if add-last-range
+;;                                               (into new-rest-seed-ranges [{:start middle :end end}])
+;;                                               new-rest-seed-ranges))))]
+;;         ;;  (println :start start :loc first-seed-location)
+;;         ;;  (println :middle middle :loc middle-seed-location)
+;;         ;;  (println :end end :loc last-seed-location)
+;;          (println :new-min new-min)
+;;          (recur map-of-ranges new-new-rest-seed-ranges [new-min] (inc break)))
+;;        {:results results :break break}))))
+
+;; (defn solve2
+;;   [input]
+;;   (let [map-of-ranges (input->ranges2 input)
+;;         min-could-be-in-range (process-seed-range2 (map-of-ranges))
+;;         _ (print min-could-be-in-range)]
+;;     (apply min (:results min-could-be-in-range))))
+
+;; (solve2 test-input)
+
+;; (solve2 input)
+
+;; returns 119363901
+
+;; too high!
