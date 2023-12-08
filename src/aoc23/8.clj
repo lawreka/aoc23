@@ -1,7 +1,9 @@
 (ns aoc23.8
   (:require [aoc23.input.8 :refer [test-input1
                                    test-input2
+                                   test-input3
                                    input]]
+            [clojure.math.numeric-tower :as math.num]
             [clojure.string :as str]))
 
 ;; --- Day 8: Haunted Wasteland ---
@@ -74,3 +76,54 @@
 
 (solve input)
 ;; return => 22357
+
+(defn solve2
+  "zigzag spookily thru the desert"
+  [input]
+  (let [instructions (-> (str/split-lines input)
+                         first
+                         (str/split #""))
+        nodes (rest (->> (str/split-lines input)
+                         (remove str/blank?)))
+        nodes-keys (map (fn [node]
+                          (-> (str/split node #" ")
+                              first))
+                        nodes)
+        nodes-vals (map (fn [node]
+                          (let [L-R (-> (str/split node #"= ")
+                                        second
+                                        (str/split #", "))]
+                            {:L (subs (first L-R) 1 4)
+                             :R (subs (second L-R) 0 3)}))
+                        nodes)
+        nodes-map (zipmap nodes-keys nodes-vals)
+        A-nodes (->> (map (fn [node-map-entry]
+                            (let [last-char (-> (first node-map-entry)
+                                                (str/split #"")
+                                                last)]
+                              (when (= "A" last-char)
+                                (first node-map-entry))))
+                          nodes-map)
+                     (remove nil?))
+        walk (fn [position rest-instructions step-count]
+               (let [instruction (first rest-instructions)
+                     next-instructions (if (empty? (rest rest-instructions))
+                                         instructions
+                                         (rest rest-instructions))
+                     next-position (get-in nodes-map [position (keyword instruction)])
+                     last-char-in-next-position (-> next-position
+                                                    (str/split #"")
+                                                    last)]
+                 (if (= last-char-in-next-position "Z")
+                   (inc step-count)
+                   (recur next-position next-instructions (inc step-count)))))
+        path-lengths (map (fn [node]
+                            (walk node instructions 0))
+                          A-nodes)]
+    (reduce math.num/lcm path-lengths)))
+
+(solve2 test-input3)
+;; expect => 6
+
+(solve2 input)
+;; returns => 10371555451871
