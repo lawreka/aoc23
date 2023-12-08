@@ -186,3 +186,154 @@
 
 (solve input)
 ;; returns => 245794640
+
+(defn get-hand-type2
+  "with jokers trick"
+  [hand]
+  (let [cards (str/split hand #"")
+        jokers (count (filter #(= "J" %) cards))
+        num-of-each-card (map (fn [card]
+                                (let [card-count (-> (filter #(= card %) cards)
+                                                     count)]
+                                  {:card card :count card-count}))
+                              cards)
+        get-original-type (fn [summed-num]
+                            (cond
+                              (= 25 summed-num) :five-of-a-kind
+                              (= 17 summed-num) :four-of-a-kind
+                              (= 13 summed-num) :full-house
+                              (= 11 summed-num) :three-of-a-kind
+                              (= 9 summed-num) :two-pair
+                              (= 7 summed-num) :one-pair
+                              :else :high-card))]
+    (if (or (= jokers 0) (= jokers 5))
+      (get-original-type (reduce + (map #(:count %) num-of-each-card)))
+      (let [num-of-each-non-joker (map (fn [card]
+                                         (let [card-count (-> (filter #(= card %) cards)
+                                                              count)]
+                                           {:card card :count card-count}))
+                                       (remove #(= "J" %) cards))
+            most-card (:card (apply max-key :count (set num-of-each-non-joker)))
+            transformed-hand (str/replace hand "J" most-card)]
+        (get-hand-type2 transformed-hand)))))
+
+(get-hand-type2 "JT4J5")
+(get-hand-type2 "AAAAA")
+(get-hand-type2 "AAAAJ")
+(get-hand-type2 "AA8AA")
+(get-hand-type2 "AA8AJ")
+(get-hand-type2 "23332")
+(get-hand-type2 "233J2")
+(get-hand-type2 "TTT98")
+(get-hand-type2 "TTJ98")
+(get-hand-type2 "23432")
+(get-hand-type2 "234J2")
+(get-hand-type2 "A23A4")
+(get-hand-type2 "A23J4")
+(get-hand-type2 "23456")
+(get-hand-type2 "32T3K")
+(get-hand-type2 "T55J5")
+(get-hand-type2 "JJJJA")
+(get-hand-type2 "JJJJJ")
+
+
+(defn hand->score2 [hand]
+  (let [place->multiplier (fn [index]
+                            (cond
+                              (= 0 index) 100000000000
+                              (= 1 index) 1000000000
+                              (= 2 index) 10000000
+                              (= 3 index) 10000
+                              :else 10))
+        cards (str/split hand #"")
+        card->score (fn [card]
+                      (cond
+                        (= "A" card) 14
+                        (= "K" card) 13
+                        (= "Q" card) 12
+                        (= "J" card) 01
+                        (= "T" card) 10
+                        :else (Integer/parseInt card)))
+        hand-score (->> (map-indexed (fn [index card]
+                                       (* (place->multiplier index) (card->score card)))
+                                     cards)
+                        (reduce +))]
+    hand-score))
+
+(defn calculate-group-rankings2
+  [rank-offset group]
+  (let [offset (inc rank-offset)
+        hands->comparables (map (fn [hand]
+                                  (assoc hand :score (hand->score2 (:hand hand))))
+                                group)
+        sorted-comparables (sort-by :score hands->comparables)
+        attached-ranks (map-indexed (fn [index hand]
+                                      (println :hand (:hand hand) :rank (+ offset index))
+                                      (assoc hand :rank (+ offset index))) sorted-comparables)]
+    attached-ranks))
+
+(defn solve2
+ "jokers wild"
+  [input]
+  (let [hands (-> (str/split-lines input))
+        hands->type (map (fn [hand-bid]
+                           (let [hand (-> (str/split hand-bid #" ")
+                                          first)
+                                 bid (-> (str/split hand-bid #" ")
+                                         second
+                                         Integer/parseInt)]
+                             {:hand hand
+                              :bid bid
+                              :type (get-hand-type2 hand)}))
+                         hands)
+        filter-by-type (fn [group type]
+                         (filter #(= type (:type %)) group))
+        high-cards (filter-by-type hands->type :high-card)
+        high-card-rankings (calculate-group-rankings2 0 high-cards)
+        one-pairs (filter-by-type hands->type :one-pair)
+        one-pair-rankings (calculate-group-rankings2 (count high-cards) one-pairs)
+        two-pairs (filter-by-type hands->type :two-pair)
+        two-pair-rankings (calculate-group-rankings2 (+ (count high-cards)
+                                                       (count one-pairs)) two-pairs)
+        three-of-a-kinds (filter-by-type hands->type :three-of-a-kind)
+        three-of-a-kind-rankings (calculate-group-rankings2 (+ (count high-cards)
+                                                              (count one-pairs)
+                                                              (count two-pairs)) three-of-a-kinds)
+        full-houses (filter-by-type hands->type :full-house)
+        full-house-rankings (calculate-group-rankings2 (+ (count high-cards)
+                                                         (count one-pairs)
+                                                         (count two-pairs)
+                                                         (count three-of-a-kinds)) full-houses)
+        four-of-a-kinds (filter-by-type hands->type :four-of-a-kind)
+        four-of-a-kind-rankings (calculate-group-rankings2 (+ (count high-cards)
+                                                             (count one-pairs)
+                                                             (count two-pairs)
+                                                             (count three-of-a-kinds)
+                                                             (count full-houses)) four-of-a-kinds)
+        five-of-a-kinds (filter-by-type hands->type :five-of-a-kind)
+        five-of-a-kind-rankings (calculate-group-rankings2 (+ (count high-cards)
+                                                             (count one-pairs)
+                                                             (count two-pairs)
+                                                             (count three-of-a-kinds)
+                                                             (count full-houses)
+                                                             (count four-of-a-kinds)) five-of-a-kinds)
+        get-winnings (fn [group]
+                       (map (fn [{:keys [bid rank]}]
+                              (* bid rank))
+                            group))
+        all-cards-with-rankings (-> (conj (get-winnings high-card-rankings)
+                                          (get-winnings one-pair-rankings)
+                                          (get-winnings two-pair-rankings)
+                                          (get-winnings three-of-a-kind-rankings)
+                                          (get-winnings full-house-rankings)
+                                          (get-winnings four-of-a-kind-rankings)
+                                          (get-winnings five-of-a-kind-rankings))
+                                    flatten)
+        ]
+    (reduce + all-cards-with-rankings)))
+
+(solve2 test-input)
+;; expect => 5905
+
+(solve2 input)
+;; returns => 247899149
