@@ -16,8 +16,28 @@
 
 (defn solve
   [input]
-  (print input)
-  )
+  (let [lines (map-indexed (fn [index line]
+                             {:line-index index
+                              :line line})
+                           (str/split-lines input))
+        s-line (-> (filter #(str/includes? (:line %) "S") lines)
+                       first) 
+        s-index (str/index-of (:line s-line) "S")
+        get-path (fn [line next-line prev-line pos-index]
+                   (let [north-node (nth prev-line pos-index)
+                         south-node (nth next-line pos-index)
+                         east-node (nth line (inc pos-index))
+                         west-node (nth line (dec pos-index))]
+                     {:north north-node :south south-node :east east-node :west west-node}))
+        follow-path (fn [line line-index pos-index]
+                      (let [next-line (nth lines (inc line-index) "...")
+                            prev-line (nth lines (dec line-index) "...")
+                            next-nodes (get-path line (:line next-line) (:line prev-line) pos-index)]
+                        (print next-nodes)))
+        _ (print :s-line s-line :s-index s-index)
+        _ (println follow-path)
+        ]
+    ))
 
 (solve test-input1)
 (solve test-input2)
